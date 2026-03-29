@@ -1,39 +1,38 @@
 const Ajv = require("ajv");
 const ajv = new Ajv();
-
 const categoryDao = require("../../dao/category-dao.js");
 
 const schema = {
   type: "object",
   properties: {
-    name: { type: "string" },
-    desc: { type: "string" },
+    id: { type: "string" },
   },
-  required: ["name"],
+  required: ["id"],
   additionalProperties: false,
 };
 
-async function CreateAbl(req, res) {
+async function GetAbl(req, res) {
   try {
-    let category = req.body;
+    // get request query or body
+    const reqParams = req.query?.id ? req.query : req.body;
 
     // validate input
-    const valid = ajv.validate(schema, category);
+    const valid = ajv.validate(schema, reqParams);
     if (!valid) {
       res.status(400).json({
         code: "dtoInIsNotValid",
-        message: "dtoIn is not valid",
+        category: "dtoIn is not valid",
         validationError: ajv.errors,
       });
       return;
     }
 
-    // store category to a persistant storage
-    try {
-      category = categoryDao.create(category);
-    } catch (e) {
-      res.status(400).json({
-        ...e,
+    // read category by given id
+    const category = categoryDao.get(reqParams.id);
+    if (!category) {
+      res.status(404).json({
+        code: "categoryNotFound",
+        category: `Category with id ${reqParams.id} not found`,
       });
       return;
     }
@@ -45,4 +44,4 @@ async function CreateAbl(req, res) {
   }
 }
 
-module.exports = CreateAbl;
+module.exports = GetAbl;

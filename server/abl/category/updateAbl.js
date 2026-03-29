@@ -6,14 +6,15 @@ const categoryDao = require("../../dao/category-dao.js");
 const schema = {
   type: "object",
   properties: {
+    id: { type: "string" },
     name: { type: "string" },
     desc: { type: "string" },
   },
-  required: ["name"],
+  required: ["id"],
   additionalProperties: false,
 };
 
-async function CreateAbl(req, res) {
+async function UpdateAbl(req, res) {
   try {
     let category = req.body;
 
@@ -22,27 +23,35 @@ async function CreateAbl(req, res) {
     if (!valid) {
       res.status(400).json({
         code: "dtoInIsNotValid",
-        message: "dtoIn is not valid",
+        category: "dtoIn is not valid",
         validationError: ajv.errors,
       });
       return;
     }
 
-    // store category to a persistant storage
+    // update category in persistent storage
+    let updatedCategory;
     try {
-      category = categoryDao.create(category);
+      updatedCategory = categoryDao.update(category);
     } catch (e) {
       res.status(400).json({
         ...e,
       });
       return;
     }
+    if (!updatedCategory) {
+      res.status(404).json({
+        code: "categoryNotFound",
+        category: `Category with id ${category.id} not found`,
+      });
+      return;
+    }
 
     // return properly filled dtoOut
-    res.json(category);
+    res.json(updatedCategory);
   } catch (e) {
     res.status(500).json({ category: e.category });
   }
 }
 
-module.exports = CreateAbl;
+module.exports = UpdateAbl;
